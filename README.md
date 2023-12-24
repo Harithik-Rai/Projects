@@ -1,1 +1,1 @@
-This mini project created 3 different sorting algorithms (Blind, Insertion and Merge) and tested them on 3 different arrays (Sorted, Unsorted, Random) to see the difference in runtimes and how it can affect code. By running each algorithm one by one, you can easily see the difference in runtime.
+
