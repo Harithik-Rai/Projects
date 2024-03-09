@@ -1,2 +1,1 @@
-main.cpp - File with C++ code
-Pngs - Outputs of main.cpp
+main.cpp is the file with C++ code and the pngs are outputs of the program.
