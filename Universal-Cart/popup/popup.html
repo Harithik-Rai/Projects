@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Universal Cart</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Universal Cart</h1>
+    
+    <div class="connection-status" id="connection-status">
+      <span class="status-dot"></span>
+      <span class="status-text">Connected</span>
+      <button id="refresh-connection">Refresh Connection</button>
+    </div>
+    
+    <div class="add-item">
+      <input type="text" id="item-url" placeholder="Paste item URL">
+      <button id="add-item-btn">Add Item</button>
+    </div>
+    
+    <div id="cart-items" class="cart-items">
+      <!-- Items will be added here dynamically -->
+    </div>
+    
+    <div class="cart-summary">
+      <div class="subtotal">
+        <span>Subtotal:</span>
+        <span id="cart-subtotal">$0.00</span>
+      </div>
+    </div>
+    
+    <div class="cart-actions">
+      <button id="clear-cart">Clear Cart</button>
+    </div>
+  </div>
+  
+  <script src="popup.js"></script>
+</body>
+</html>
