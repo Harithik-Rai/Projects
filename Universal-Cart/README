@@ -1,1 +1,28 @@
+HOW TO USE AS GOOGLE EXTENSION:
 
+1) Inside the folder you should have these files with the code I provided:
+manifest.json
+popup/ (folder)
+   popup.html
+   popup.css
+   popup.js
+content.js
+background.js
+icons/ (folder with sample icon files)
+
+2) Load the Extension in Chrome
+Open Chrome and go to:
+chrome://extensions
+
+Enable Developer Mode (toggle in top-right corner)
+
+Click "Load unpacked" button
+
+Select your universal-cart folder
+
+The extension will now appear in your extensions list and is now usable!
+
+3) To use it you simply go to a product on an online website and copy and URL in google at the top,
+you then paste it in and it should appear in the cart showing the image, price, title, and cilckable URL.
+
+*This is still a work in progress and some sites may not work due to having strict privacy settings like Amazon.
