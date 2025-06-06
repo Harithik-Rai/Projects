@@ -1,6 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-  const itemUrlInput = document.getElementById('item-url');
-  const addItemBtn = document.getElementById('add-item-btn');
+  const addCurrentItemBtn = document.getElementById('add-current-item-btn');
   const cartItemsContainer = document.getElementById('cart-items');
   const clearCartBtn = document.getElementById('clear-cart');
   const subtotalElement = document.getElementById('cart-subtotal');
@@ -21,10 +20,7 @@ document.addEventListener('DOMContentLoaded', function() {
   checkConnection();
   
   // Event listeners
-  addItemBtn.addEventListener('click', addItemFromUrl);
-  itemUrlInput.addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') addItemFromUrl();
-  });
+  addCurrentItemBtn.addEventListener('click', addCurrentItem);
   clearCartBtn.addEventListener('click', clearCart);
   refreshBtn.addEventListener('click', refreshConnection);
 
@@ -151,67 +147,66 @@ function updateConnectionStatus() {
     }
   }
 
-  // Enhanced item adding with connection handling
-  async function addItemFromUrl() {
-    const url = itemUrlInput.value.trim();
-    if (!url) return;
-
+  async function addCurrentItem() {
     try {
-      new URL(url);
-    } catch (e) {
-      alert('Please enter a valid URL');
-      return;
-    }
-
-    // Verify connection
-    if (!await checkConnection()) {
-      const shouldRefresh = confirm("Connection lost. Refresh connection?");
-      if (shouldRefresh) await refreshConnection();
-      if (!connectionState.isConnected) return;
-    }
-
-    try {
-      const tabs = await chrome.tabs.query({active: true, currentWindow: true});
-      if (!tabs.length || !tabs[0].id) {
-        throw new Error("No active tab found");
+      // Get the current tab's URL
+      const [tab] = await chrome.tabs.query({active: true, currentWindow: true});
+      if (!tab || !tab.url) {
+        throw new Error("Could not get current page URL");
       }
 
-      // Add timeout to prevent hanging
-      const response = await Promise.race([
-        new Promise((resolve) => {
-          chrome.tabs.sendMessage(
-            tabs[0].id,
-            {action: "scrapeItem", url: url},
-            (response) => {
-              if (chrome.runtime.lastError) {
-                connectionState.isConnected = false;
-                connectionState.lastError = chrome.runtime.lastError.message;
-                updateConnectionStatus();
-                resolve({success: false, error: chrome.runtime.lastError.message});
-              } else {
-                resolve(response || {success: false, error: "No response"});
-              }
-            }
-          );
-        }),
-        new Promise((resolve) => setTimeout(
-          () => resolve({success: false, error: "Timeout after 5 seconds"}),
-          5000
-        ))
-      ]);
+      const url = tab.url.trim();
+      if (!url) {
+        throw new Error("Current page has no URL");
+      }
 
-      if (response?.success) {
-        addItemToCart(response.item);
-        itemUrlInput.value = '';
-      } else {
-        throw new Error(response?.error || "Failed to scrape item");
+      // Verify connection
+      if (!await checkConnection()) {
+        const shouldRefresh = confirm("Connection lost. Refresh connection?");
+        if (shouldRefresh) await refreshConnection();
+        if (!connectionState.isConnected) return;
+      }
+
+      try {
+        // Add timeout to prevent hanging
+        const response = await Promise.race([
+          new Promise((resolve) => {
+            chrome.tabs.sendMessage(
+              tab.id,
+              {action: "scrapeItem", url: url},
+              (response) => {
+                if (chrome.runtime.lastError) {
+                  connectionState.isConnected = false;
+                  connectionState.lastError = chrome.runtime.lastError.message;
+                  updateConnectionStatus();
+                  resolve({success: false, error: chrome.runtime.lastError.message});
+                } else {
+                  resolve(response || {success: false, error: "No response"});
+                }
+              }
+            );
+          }),
+          new Promise((resolve) => setTimeout(
+            () => resolve({success: false, error: "Timeout after 5 seconds"}),
+            5000
+          ))
+        ]);
+
+        if (response?.success) {
+          addItemToCart(response.item);
+        } else {
+          throw new Error(response?.error || "Failed to scrape item");
+        }
+      } catch (error) {
+        console.error("Add item error:", error.message);
+        connectionState.isConnected = false;
+        connectionState.lastError = error.message;
+        updateConnectionStatus();
+        addFallbackItem(url, error.message);
       }
     } catch (error) {
-      console.error("Add item error:", error.message);
-      connectionState.isConnected = false;
-      connectionState.lastError = error.message;
-      updateConnectionStatus();
-      addFallbackItem(url, error.message);
+      console.error("Error getting current page:", error);
+      alert("Could not add current page to cart: " + error.message);
     }
   }
 
