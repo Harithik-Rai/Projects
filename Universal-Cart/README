@@ -22,7 +22,7 @@ Select your universal-cart folder
 
 The extension will now appear in your extensions list and is now usable!
 
-3) To use it you simply go to a product on an online website and copy and URL in google at the top,
-you then paste it in and it should appear in the cart showing the image, price, title, and cilckable URL.
+3) To use it you simply go to a product on an online website and click the "Add to cart" button at the top of the extension,
+it will then appear in the cart showing the image, price, title, and cilckable URL to get back to the product site.
 
-*This is still a work in progress and some sites may not work due to having strict privacy settings like Amazon.
+*This is still a work in progress and rarely some sites may not work due to having strict privacy settings.
