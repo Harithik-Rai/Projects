@@ -1,8 +1,7 @@
-// Connection manager
+// Connection manager (unchanged)
 let isAlive = true;
 const connectionInterval = setInterval(verifyConnection, 30000);
 
-// Verify connection periodically
 function verifyConnection() {
   chrome.runtime.sendMessage({type: "ping"}, (response) => {
     if (chrome.runtime.lastError || !response) {
@@ -12,7 +11,7 @@ function verifyConnection() {
   });
 }
 
-// Initialize connection
+// Initialize connection (unchanged)
 chrome.runtime.sendMessage({type: "contentScriptReady"}, (response) => {
   if (chrome.runtime.lastError) {
     console.log("Initial connection failed, will retry...");
@@ -20,12 +19,12 @@ chrome.runtime.sendMessage({type: "contentScriptReady"}, (response) => {
   }
 });
 
-// Cleanup on tab close
+// Cleanup on tab close (unchanged)
 window.addEventListener('unload', () => {
   clearInterval(connectionInterval);
 });
 
-// Message handler
+// Message handler (unchanged)
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (!isAlive) {
     sendResponse({success: false, error: "Content script disconnected"});
@@ -59,27 +58,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
-// Enhanced price scraping function with consistent currency formatting
+// Enhanced scraping function with multiple validation
 async function scrapeItemInfo(url) {
   try {
-    const titleEl = document.querySelector('h1, [itemprop="name"], .product-title') || 
-                   document.querySelector('title');
-    let title = titleEl?.textContent?.trim() || 
-               document.querySelector('meta[property="og:title"]')?.content || 
-               'Product from ' + new URL(url).hostname;
-    title = title.replace(/\s+/g, ' ').substring(0, 100);
-
-    let price = await findUniversalPrice() || 'N/A';
-    
-    // Ensure price has currency symbol if it's a valid number
-    if (price !== 'N/A' && !price.toString().match(/^(\$|£|€|¥|CAD|USD)/)) {
-      price = `$${price}`;
-    }
-
-    const image = document.querySelector('[itemprop="image"]')?.src || 
-                 document.querySelector('meta[property="og:image"]')?.content || 
-                 document.querySelector('.product-image img')?.src || 
-                 chrome.runtime.getURL('icons/icon128.png');
+    const title = await getProductTitle();
+    const price = await getConsensusPrice();
+    const image = await getProductImage();
 
     return {
       title: title,
@@ -93,201 +77,706 @@ async function scrapeItemInfo(url) {
   }
 }
 
-// Universal price detection with improved currency handling
-async function findUniversalPrice() {
-  const strategies = [
-    () => findStructuredPrice(),
-    () => findPriceBySelectors([
-      '.sale-price', '.price--sale', '.product-price--sale',
-      '[itemprop="price"]', 
-      '.price', '.product-price',
-      '.price__amount', '.price-value', '.current-price',
-      '.price-final', '.final-price'
-    ]),
-    () => findPriceInContainerWithSaleIndicator(),
-    () => findPriceByAttributes([
-      'data-price', 'data-product-price', 'data-amount', 'content'
-    ]),
-    () => {
-      const meta = document.querySelector('meta[property="product:price:amount"]');
-      return meta?.content ? formatPrice(meta.content) : null;
-    },
-    () => findPriceInDocument()
-  ];
-
-  for (const strategy of strategies) {
-    try {
-      const price = await strategy();
-      if (price) return ensureCurrencySymbol(price);
-      await new Promise(r => setTimeout(r, 100));
-    } catch (e) {
-      console.warn('Price strategy failed:', e);
-    }
-  }
-  return null;
-}
-
-// Helper function to ensure price has currency symbol
-function ensureCurrencySymbol(price) {
-  if (typeof price === 'string' && price.match(/^\d/)) {
-    return `$${price}`;
-  }
-  return price;
-}
-
-// Enhanced structured price detection
-async function findStructuredPrice() {
+// Enhanced title extraction with Amazon-specific detection
+async function getProductTitle() {
+  // Amazon-specific title detection first
   try {
-    const scriptTags = document.querySelectorAll('script[type="application/ld+json"]');
-    for (const script of scriptTags) {
+    // Amazon's main product title
+    const amazonTitle = document.querySelector('#productTitle, #title');
+    if (amazonTitle && amazonTitle.textContent.trim()) {
+      return cleanTitle(amazonTitle.textContent.trim());
+    }
+
+    // Amazon's alternative title locations
+    const amazonAltTitle = document.querySelector('.a-size-large.product-title-word-break, .qa-title-text');
+    if (amazonAltTitle && amazonAltTitle.textContent.trim()) {
+      return cleanTitle(amazonAltTitle.textContent.trim());
+    }
+
+    // Amazon's structured data
+    const amazonScript = document.querySelector('script[type="a-state"]');
+    if (amazonScript) {
       try {
-        const data = JSON.parse(script.textContent);
-        if (data instanceof Array) {
-          for (const item of data) {
-            if (item.offers?.price || item.price) {
-              return formatPrice(item.offers?.price || item.price);
-            }
-          }
-        } else if (data.offers?.price || data.price) {
-          return formatPrice(data.offers?.price || data.price);
+        const data = JSON.parse(amazonScript.textContent);
+        if (data.title) {
+          return cleanTitle(data.title);
+        }
+        if (data.product && data.product.title) {
+          return cleanTitle(data.product.title);
         }
       } catch (e) {
-        console.warn('Failed to parse JSON-LD', e);
+        console.warn('Amazon JSON parse error:', e);
       }
     }
-    
-    const priceEl = document.querySelector('[itemtype="http://schema.org/Product"] [itemprop="price"]');
-    if (priceEl) {
-      const price = extractPriceFromText(priceEl.textContent) || priceEl.getAttribute('content');
-      if (price) return formatPrice(price);
-    }
-    
-    return null;
-  } catch (e) {
-    console.warn('Structured price search failed', e);
-    return null;
-  }
-}
 
-// Improved price container search
-async function findPriceInContainerWithSaleIndicator() {
-  const containers = [
-    '.product-price-info', '.price-box', '.product-details',
-    '.product-info-main', '.product__price', '.product-pricing'
-  ];
-  
-  for (const selector of containers) {
-    const container = document.querySelector(selector);
-    if (container) {
-      const salePriceEl = container.querySelector('.sale-price, .price--on-sale, .product-price--sale');
-      if (salePriceEl) {
-        const price = extractPriceFromText(salePriceEl.textContent);
-        if (price) return price;
-      }
-      
-      const allPrices = container.querySelectorAll('[class*="price"], [class*="Price"]');
-      let bestPrice = null;
-      
-      for (const priceEl of allPrices) {
-        const price = extractPriceFromText(priceEl.textContent);
-        if (price) {
-          const style = window.getComputedStyle(priceEl);
-          if (style.textDecoration.includes('line-through')) {
-            if (!bestPrice) bestPrice = price;
-          } else {
-            return price;
-          }
+    // Amazon's JSON-LD data
+    const jsonLdScript = document.querySelector('script[type="application/ld+json"]');
+    if (jsonLdScript) {
+      try {
+        const data = JSON.parse(jsonLdScript.textContent);
+        if (data.name) {
+          return cleanTitle(data.name);
         }
+      } catch (e) {
+        console.warn('Amazon JSON-LD parse error:', e);
       }
-      
-      if (bestPrice) return bestPrice;
-      
-      const price = extractPriceFromText(container.textContent);
-      if (price) return price;
+    }
+  } catch (e) {
+    console.warn('Amazon-specific title detection failed:', e);
+  }
+
+  // Original title detection strategies (unchanged)
+  const titleSources = [
+    () => document.querySelector('h1')?.textContent?.trim(),
+    () => document.querySelector('[itemprop="name"]')?.textContent?.trim(),
+    () => document.querySelector('.product-title, .product__title')?.textContent?.trim(),
+    () => document.querySelector('title')?.textContent?.trim(),
+    () => document.querySelector('meta[property="og:title"]')?.content?.trim(),
+    () => document.querySelector('meta[name="twitter:title"]')?.content?.trim()
+  ];
+
+  for (const source of titleSources) {
+    try {
+      const title = source();
+      if (title && title.length > 0) {
+        return cleanTitle(title);
+      }
+    } catch (e) {
+      console.warn('Title extraction failed:', e);
     }
   }
-  return null;
+
+  return 'Product from ' + new URL(location.href).hostname;
 }
 
-// Enhanced price extraction
-function extractPriceFromText(text) {
-  if (!text) return null;
+// Helper function to clean up titles
+function cleanTitle(title) {
+  if (!title) return title;
   
-  // Match currency symbol followed by numbers
-  const currencyMatch = text.match(/(\$|£|€|¥|CAD|USD)\s*([\d,]+\.?\d{0,2})/);
-  if (currencyMatch) {
-    return `${currencyMatch[1]}${currencyMatch[2].replace(/,/g, '')}`;
+  // Amazon-specific cleaning
+  let cleaned = title
+    .replace(/\s+/g, ' ') // Collapse multiple spaces
+    .replace(/^Amazon\.ca:/, '') // Remove Amazon prefix
+    .replace(/\[.*?\]/g, '') // Remove brackets and contents
+    .replace(/\(.*?\)/g, '') // Remove parentheses and contents
+    .replace(/\b(?:Brand:\s*|Model:\s*|Style:\s*).*$/i, '') // Remove trailing metadata
+    .replace(/\b(?:Visit\s+the\s+\w+\s+Store\b).*$/i, '') // Remove store references
+    .replace(/\b(?:Renewed|Refurbished|Premium|Certified)\b/gi, '') // Remove condition tags
+    .trim();
+  
+  // Ensure we don't return empty string
+  if (!cleaned || cleaned.length === 0) {
+    cleaned = title.substring(0, 200).trim(); // Fallback to original if cleaned is empty
   }
   
-  // Match numbers that look like prices
-  const numberMatch = text.match(/(\d[\d,]*\.?\d{0,2})/);
-  if (numberMatch) {
-    return `$${numberMatch[0].replace(/,/g, '')}`;
-  }
-  
-  return null;
+  return cleaned.substring(0, 200); // Limit length
 }
 
-// Robust price formatting
-function formatPrice(price) {
+function normalizePrice(price) {
   if (!price) return null;
-  
+
+  // Convert to string if it's a number
   if (typeof price === 'number') {
     return `$${price.toFixed(2)}`;
   }
+
+  let priceStr = price.toString().trim();
+  const currency = (priceStr.match(/^([\$£€¥]|USD|CAD|GBP|EUR)/) || ['$'])[0];
   
-  // If already has currency symbol, return as-is
-  if (price.toString().match(/^(\$|£|€|¥|CAD|USD)/)) {
-    return price.toString()
-      .replace(/\s+/g, '')
-      .replace(/,(\d{3})/, '$1')
-      .replace(/,(\d{2})$/, '.$1');
-  }
+  // Extract all numbers including decimals/commas
+  const numberMatch = priceStr.match(/([\d,.]+)/);
+  if (!numberMatch) return null;
   
-  // Otherwise add dollar sign
-  const numericValue = price.toString()
-    .replace(/\s+/g, '')
-    .replace(/,(\d{3})/, '$1')
-    .replace(/,(\d{2})$/, '.$1')
-    .replace(/[^\d.]/g, '')
-    .replace(/^[^\d]*(\d+\.?\d*).*$/, '$1');
+  let numericStr = numberMatch[0];
+  
+  // Determine if this is likely a European format (1.000,99)
+  const isEuropeanFormat = numericStr.includes('.') && 
+                          numericStr.includes(',') && 
+                          numericStr.match(/\.\d{3},\d{2}$/);
+  
+  // Clean the number string
+  if (isEuropeanFormat) {
+    numericStr = numericStr.replace(/\./g, '').replace(',', '.');
+  } else {
+    // Remove all non-digit characters except last period or comma
+    const hasDecimalSeparator = numericStr.match(/[.,]\d+$/);
+    numericStr = numericStr.replace(/[^\d.]/g, '');
     
-  return `$${numericValue}`;
+    // If there was a decimal separator, restore it
+    if (hasDecimalSeparator) {
+      const parts = numericStr.split('.');
+      if (parts.length > 1) {
+        numericStr = parts[0] + '.' + parts.slice(1).join('');
+      }
+    }
+  }
+
+  // Convert to number
+  const numericValue = parseFloat(numericStr);
+  if (isNaN(numericValue)) return null;
+
+  // Heuristics to determine if this is a misparsed price
+  const isLikelyMisparsed = checkIfMisparsed(priceStr, numericValue);
+  
+  // Apply correction if needed
+  const correctedValue = isLikelyMisparsed ? numericValue / 100 : numericValue;
+  
+  // Format with 2 decimal places
+  const formattedValue = correctedValue.toFixed(2);
+  
+  return `${currency}${formattedValue}`;
 }
 
-// Helper functions for price detection
-async function findPriceBySelectors(selectors) {
-  for (const selector of selectors) {
-    const el = document.querySelector(selector);
-    if (el) {
-      const price = extractPriceFromText(el.textContent);
-      if (price) return price;
+function checkIfMisparsed(originalStr, numericValue) {
+  // Heuristic 1: Price ends with two zeros after decimal in original string
+  if (originalStr.match(/\.00$/)) return false;
+  
+  // Heuristic 2: Price is very large (>$10,000) but from a non-luxury site
+  if (numericValue >= 10000 && !isLuxurySite()) return true;
+  
+  // Heuristic 3: Price has unusual number of digits (like 1990000)
+  const digits = Math.floor(Math.log10(numericValue)) + 1;
+  if (digits >= 5 && numericValue % 100 === 0) return true;
+  
+  // Heuristic 4: Price appears in context that suggests it's in cents
+  const context = originalStr.toLowerCase();
+  if (context.includes('cents') || context.includes('¢')) return true;
+  
+  return false;
+}
+
+function isLuxurySite() {
+  const luxuryDomains = ['gucci', 'louisvuitton', 'chanel', 'dior', 'prada', 'hermes'];
+  const currentDomain = window.location.hostname.toLowerCase();
+  return luxuryDomains.some(domain => currentDomain.includes(domain));
+}
+
+// Price detection strategies
+async function getStructuredDataPrice() {
+  try {
+    const scripts = document.querySelectorAll('script[type="application/ld+json"]');
+    for (const script of scripts) {
+      try {
+        const data = JSON.parse(script.textContent);
+        const items = Array.isArray(data) ? data : [data];
+        
+        for (const item of items) {
+          if (item['@type'] === 'Product' || item['@type'] === 'Offer') {
+            if (item.offers?.price) return item.offers.price;
+            if (item.price) return item.price;
+          }
+          if (item.offers?.['@type'] === 'AggregateOffer') {
+            if (item.offers.lowPrice) return item.offers.lowPrice;
+            if (item.offers.highPrice) return item.offers.highPrice;
+            if (item.offers.price) return item.offers.price;
+          }
+        }
+      } catch (e) {
+        console.warn('JSON-LD parse error:', e);
+      }
     }
+  } catch (e) {
+    console.warn('Structured data search failed:', e);
   }
   return null;
 }
 
-async function findPriceByAttributes(attrs) {
-  for (const attr of attrs) {
-    const el = document.querySelector(`[${attr}]`);
-    if (el) {
-      const price = extractPriceFromText(el.getAttribute(attr));
-      if (price) return price;
-    }
-  }
-  return null;
-}
-
-async function findPriceInDocument() {
-  // Look for the most prominent price in the document
-  const priceElements = document.querySelectorAll('body [class*="price"], body [class*="Price"]');
-  for (const el of priceElements) {
-    const price = extractPriceFromText(el.textContent);
+function extractPriceFromElement(el) {
+  // Check content attributes first
+  const content = el.getAttribute('content') || 
+                 el.getAttribute('data-price') || 
+                 el.getAttribute('data-product-price');
+  if (content) {
+    const price = normalizePrice(content);
     if (price) return price;
   }
   
-  // Fallback to text search
-  const pricePattern = /(\$|£|€|¥|CAD|USD)\s*[\d,]+\.?\d{0,2}/;
-  const matches = document.body.textContent.match(pricePattern);
-  return matches ? formatPrice(matches[0]) : null;
+  // Then check text content
+  const text = el.textContent;
+  if (text) {
+    const price = normalizePrice(text);
+    if (price) return price;
+  }
+  
+  return null;
+}
+
+async function getPriceFromMetaTags() {
+  const metaSelectors = [
+    'meta[property="product:price:amount"]',
+    'meta[itemprop="price"]',
+    'meta[name="price"]',
+    'meta[property="og:price:amount"]'
+  ];
+  
+  for (const selector of metaSelectors) {
+    try {
+      const meta = document.querySelector(selector);
+      if (meta && meta.content) {
+        const price = normalizePrice(meta.content);
+        if (price) return price;
+      }
+    } catch (e) {
+      console.warn(`Meta selector ${selector} failed:`, e);
+    }
+  }
+  return null;
+}
+
+async function getPriceFromTextSearch() {
+  try {
+    // Search for price patterns in the entire document
+    const pricePatterns = [
+      /([\$£€¥]|USD|CAD|GBP|EUR)\s*[\d,]+\.?\d{0,2}/g,
+      /[\d,]+\.?\d{0,2}\s*([\$£€¥]|USD|CAD|GBP|EUR)/g,
+      /price:\s*([\$£€¥]|USD|CAD|GBP|EUR)\s*[\d,]+\.?\d{0,2}/gi
+    ];
+    
+    for (const pattern of pricePatterns) {
+      const matches = document.body.textContent.match(pattern);
+      if (matches) {
+        for (const match of matches) {
+          const price = normalizePrice(match);
+          if (price) return price;
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('Text search failed:', e);
+  }
+  return null;
+}
+
+async function getPriceFromHiddenInputs() {
+  const inputSelectors = [
+    'input[name="price"]',
+    'input[id*="price"]',
+    'input[class*="price"]'
+  ];
+
+  for (const selector of inputSelectors) {
+    try {
+      const input = document.querySelector(selector);
+      if (input && input.value) {
+        const price = normalizePrice(input.value);
+        if (price) return price;
+      }
+    } catch (e) {
+      console.warn(`Hidden input search failed for ${selector}:`, e);
+    }
+  }
+  return null;
+}
+
+// Enhanced price extraction from text
+function extractPriceFromText(text) {
+  if (!text) return null;
+
+  // Handle common price formats with currency symbols
+  const currencyFormats = [
+    /([\$£€¥]|USD|CAD|GBP|EUR)\s*([\d,]+\.?\d{0,2})/, // $19.99
+    /([\d,]+\.?\d{0,2})\s*([\$£€¥]|USD|CAD|GBP|EUR)/, // 19.99$
+    /([\$£€¥]|USD|CAD|GBP|EUR)([\d,]+)/,              // $19
+    /([\d,]+)([\$£€¥]|USD|CAD|GBP|EUR)/               // 19$
+  ];
+
+  for (const format of currencyFormats) {
+    const match = text.match(format);
+    if (match) {
+      const currency = match[1] || '$';
+      const amount = (match[2] || match[1]).replace(/[^\d.]/g, '');
+      return `${currency}${amount}`;
+    }
+  }
+
+  // Handle decimal/comma formats
+  const decimalFormats = [
+    /(\d{1,3}(?:,\d{3})*\.\d{2})/,  // 1,000.00
+    /(\d{1,3}(?:\.\d{3})*,\d{2})/,  // 1.000,00
+    /(\d+\.\d{2})/,                 // 1000.00
+    /(\d+,\d{2})/                   // 1000,00
+  ];
+
+  for (const format of decimalFormats) {
+    const match = text.match(format);
+    if (match) {
+      let amount = match[0];
+      // Convert European format to standard
+      if (amount.includes('.') && amount.includes(',')) {
+        amount = amount.replace('.', '').replace(',', '.');
+      } else if (amount.includes(',')) {
+        amount = amount.replace(',', '.');
+      }
+      return `$${amount}`;
+    }
+  }
+
+  return null;
+}
+
+// Fallback price detection for complex sites
+async function getPriceFromFallbackMethods() {
+  // Method 1: Look for prices near product titles
+  try {
+    const titleEl = document.querySelector('h1, [itemprop="name"], .product-title');
+    if (titleEl) {
+      let sibling = titleEl.nextElementSibling;
+      for (let i = 0; i < 3 && sibling; i++) {
+        const price = extractPriceFromText(sibling.textContent);
+        if (price) return price;
+        sibling = sibling.nextElementSibling;
+      }
+    }
+  } catch (e) {
+    console.warn('Title-adjacent price search failed:', e);
+  }
+
+  // Method 2: Look for prices in the main content area
+  try {
+    const mainContent = document.querySelector('main, #main, .main-content, #content');
+    if (mainContent) {
+      const priceElements = mainContent.querySelectorAll('p, span, div');
+      for (const el of priceElements) {
+        const price = extractPriceFromText(el.textContent);
+        if (price) return price;
+      }
+    }
+  } catch (e) {
+    console.warn('Main content price search failed:', e);
+  }
+
+  // Method 3: Look for the largest number that looks like a price
+  try {
+    const allText = document.body.textContent;
+    const numberMatches = allText.match(/\d[\d,.]*\d/g) || [];
+    const potentialPrices = numberMatches
+      .map(num => {
+        const cleanNum = num.replace(/[^\d.]/g, '');
+        const value = parseFloat(cleanNum);
+        return { text: num, value };
+      })
+      .filter(({ value }) => !isNaN(value) && value < 100000) // Filter out unrealistic prices
+      .sort((a, b) => b.value - a.value); // Sort descending
+
+    if (potentialPrices.length > 0) {
+      return `$${potentialPrices[0].value.toFixed(2)}`;
+    }
+  } catch (e) {
+    console.warn('Largest number search failed:', e);
+  }
+
+  return null;
+}
+
+async function getProductImage() {
+  // Amazon-specific detection first
+  try {
+    // Amazon's main product image
+    const amazonMainImage = document.querySelector('#main-image-container img, #imgTagWrapperId img, #landingImage');
+    if (amazonMainImage && isValidImageUrl(amazonMainImage.src)) {
+      return makeAbsoluteUrl(amazonMainImage.src);
+    }
+
+    // Amazon's alternative image (often higher quality)
+    const amazonZoomImage = document.querySelector('[data-action="main-image-click"] img');
+    if (amazonZoomImage && isValidImageUrl(amazonZoomImage.src)) {
+      return makeAbsoluteUrl(amazonZoomImage.src);
+    }
+
+    // Amazon's structured data
+    const amazonScript = document.querySelector('script[type="a-state"]');
+    if (amazonScript) {
+      try {
+        const data = JSON.parse(amazonScript.textContent);
+        if (data.imageBlockData && data.imageBlockData.mainImage) {
+          const mainImage = data.imageBlockData.mainImage;
+          if (isValidImageUrl(mainImage)) {
+            return makeAbsoluteUrl(mainImage);
+          }
+        }
+      } catch (e) {
+        console.warn('Amazon JSON parse error:', e);
+      }
+    }
+
+    // Amazon's image in JSON-LD
+    const jsonLdScript = document.querySelector('script[type="application/ld+json"]');
+    if (jsonLdScript) {
+      try {
+        const data = JSON.parse(jsonLdScript.textContent);
+        if (data.image) {
+          if (typeof data.image === 'string' && isValidImageUrl(data.image)) {
+            return makeAbsoluteUrl(data.image);
+          }
+          if (Array.isArray(data.image) && data.image.length > 0 && isValidImageUrl(data.image[0])) {
+            return makeAbsoluteUrl(data.image[0]);
+          }
+        }
+      } catch (e) {
+        console.warn('Amazon JSON-LD parse error:', e);
+      }
+    }
+
+    // Amazon's image in JavaScript data
+    const imageDataScript = document.querySelector('script:contains("ImageBlockATF")');
+    if (imageDataScript) {
+      try {
+        const scriptText = imageDataScript.textContent;
+        const imageUrlMatch = scriptText.match(/"mainUrl":"([^"]+)"/);
+        if (imageUrlMatch && imageUrlMatch[1] && isValidImageUrl(imageUrlMatch[1])) {
+          return makeAbsoluteUrl(imageUrlMatch[1].replace(/\\\//g, '/'));
+        }
+      } catch (e) {
+        console.warn('Amazon script data parse error:', e);
+      }
+    }
+  } catch (e) {
+    console.warn('Amazon-specific image detection failed:', e);
+  }
+
+  // Target-specific detection (unchanged)
+  try {
+    const targetImage = document.querySelector('[data-test="product-image"] img, [data-test="gallery-image"] img');
+    if (targetImage && isValidImageUrl(targetImage.src)) {
+      return makeAbsoluteUrl(targetImage.src);
+    }
+    const targetZoomImage = document.querySelector('[data-test="zoom-img"]');
+    if (targetZoomImage && isValidImageUrl(targetZoomImage.src)) {
+      return makeAbsoluteUrl(targetZoomImage.src);
+    }
+    const targetScript = document.querySelector('script[type="application/ld+json"]');
+    if (targetScript) {
+      try {
+        const data = JSON.parse(targetScript.textContent);
+        if (data.image) {
+          if (typeof data.image === 'string' && isValidImageUrl(data.image)) {
+            return makeAbsoluteUrl(data.image);
+          }
+          if (Array.isArray(data.image) && data.image.length > 0 && isValidImageUrl(data.image[0])) {
+            return makeAbsoluteUrl(data.image[0]);
+          }
+        }
+      } catch (e) {
+        console.warn('Target JSON-LD parse error:', e);
+      }
+    }
+  } catch (e) {
+    console.warn('Target-specific image detection failed:', e);
+  }
+
+  // Original image detection strategies (unchanged)
+  const imageSelectors = [
+    // Structured data sources
+    () => document.querySelector('[itemprop="image"]')?.src,
+    () => document.querySelector('meta[property="og:image"]')?.content,
+    () => document.querySelector('meta[name="twitter:image"]')?.content,
+    () => document.querySelector('link[rel="image_src"]')?.href,
+    
+    // Common gallery and product image selectors
+    () => document.querySelector('.product-image img, .product__image img')?.src,
+    () => document.querySelector('.main-image img, .hero-image img')?.src,
+    () => document.querySelector('.gallery-image img, .thumbnail img')?.src,
+    () => document.querySelector('.swiper-slide img, .carousel-item img')?.src,
+    
+    // Data attributes and lazy-loaded images
+    () => document.querySelector('[data-product-image]')?.getAttribute('data-product-image'),
+    () => document.querySelector('[data-src]')?.getAttribute('data-src'),
+    () => document.querySelector('[data-image]')?.getAttribute('data-image'),
+    () => document.querySelector('img[loading="lazy"]')?.src,
+    
+    // Image in product containers
+    () => {
+      const container = document.querySelector('.product, .product-detail, .pdp-container');
+      return container?.querySelector('img')?.src;
+    },
+    
+    // First large image on page
+    () => {
+      const images = Array.from(document.querySelectorAll('img'));
+      const largeImages = images.filter(img => {
+        const width = parseInt(img.width) || 0;
+        const height = parseInt(img.height) || 0;
+        return width >= 300 && height >= 300;
+      });
+      return largeImages[0]?.src;
+    }
+  ];
+
+  // Try all selectors in order
+  for (const selector of imageSelectors) {
+    try {
+      const imageUrl = selector();
+      if (imageUrl && isValidImageUrl(imageUrl)) {
+        return makeAbsoluteUrl(imageUrl);
+      }
+    } catch (e) {
+      console.warn('Image selector failed:', e);
+    }
+  }
+
+  // Final fallback to extension icon
+  return chrome.runtime.getURL('icons/icon128.png');
+}
+
+// Enhanced validation to exclude non-product images
+function isValidImageUrl(url) {
+  if (!url) return false;
+  
+  // Skip non-product images (like profile pictures, ads, etc.)
+  const excludePatterns = [
+    'avatar', 'profile', 'user', 'ad', 'sponsor', 
+    'banner', 'promo', 'marketing', 'selfie', 'person'
+  ];
+  
+  const lowerUrl = url.toLowerCase();
+  if (excludePatterns.some(pattern => lowerUrl.includes(pattern))) {
+    return false;
+  }
+  
+  // Skip placeholder images
+  const placeholderKeywords = ['placeholder', 'blank', 'missing', 'noimage', 'none'];
+  if (placeholderKeywords.some(kw => lowerUrl.includes(kw))) {
+    return false;
+  }
+  
+  try {
+    const parsed = new URL(url, window.location.href);
+    
+    if (!parsed.protocol.startsWith('http') && !parsed.protocol.startsWith('data:')) {
+      return false;
+    }
+    
+    const path = parsed.pathname.toLowerCase();
+    const validExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
+    if (!validExtensions.some(ext => path.endsWith(ext))) {
+      if (url.startsWith('data:image/')) {
+        const contentType = url.split(';')[0];
+        return ['data:image/jpeg', 'data:image/png', 'data:image/webp', 'data:image/gif']
+          .some(valid => contentType.startsWith(valid));
+      }
+      return false;
+    }
+    
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+// Helper function remains unchanged
+function makeAbsoluteUrl(url) {
+  try {
+    if (url.startsWith('//')) {
+      return window.location.protocol + url;
+    }
+    if (url.startsWith('/')) {
+      return new URL(url, window.location.origin).href;
+    }
+    if (!url.startsWith('http') && !url.startsWith('data:')) {
+      const basePath = window.location.href.split('?')[0];
+      const baseUrl = basePath.substring(0, basePath.lastIndexOf('/') + 1);
+      return new URL(url, baseUrl).href;
+    }
+    return url;
+  } catch (e) {
+    console.warn('URL normalization failed:', e);
+    return url;
+  }
+}
+
+function isValidImageUrl(url) {
+  if (!url) return false;
+  
+  const placeholderKeywords = ['placeholder', 'blank', 'missing', 'noimage', 'none'];
+  const lowerUrl = url.toLowerCase();
+  if (placeholderKeywords.some(kw => lowerUrl.includes(kw))) {
+    return false;
+  }
+  
+  try {
+    const parsed = new URL(url, window.location.href);
+    
+    if (!parsed.protocol.startsWith('http') && !parsed.protocol.startsWith('data:')) {
+      return false;
+    }
+    
+    const path = parsed.pathname.toLowerCase();
+    const validExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.svg'];
+    if (!validExtensions.some(ext => path.endsWith(ext))) {
+      if (url.startsWith('data:image/')) {
+        const contentType = url.split(';')[0];
+        return ['data:image/jpeg', 'data:image/png', 'data:image/webp', 'data:image/gif']
+          .some(valid => contentType.startsWith(valid));
+      }
+      return false;
+    }
+    
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+// Update the consensus price function to include new methods
+async function getConsensusPrice() {
+  // Check site-specific conditions
+  const hostname = window.location.hostname;
+  const isNordstrom = hostname.includes('nordstrom');
+  const isCostco = hostname.includes('costco');
+  const isSportChek = hostname.includes('sportchek');
+  const isApple = hostname.includes('apple');
+  const isEb = hostname.includes('gamestop');
+  const isLowes = hostname.includes('lowes');
+  const isSears = hostname.includes('sears');
+  const isholt = hostname.includes('holtrenfrew');
+  const isxbox = hostname.includes('xbox');
+
+  const strategies = [
+    ...(isNordstrom ? [] : [getStructuredDataPrice]),
+    getPriceFromMetaTags,
+    getPriceFromHiddenInputs,
+    ...((isCostco || isSportChek || isApple || isLowes || isEb || isSears || isholt || isxbox) ? [] : [getPriceFromFallbackMethods]),
+    ...((isCostco) ? [] : [getPriceFromTextSearch])
+  ].filter(Boolean);
+
+  // Run all strategies in parallel with timeout
+  const results = await Promise.allSettled(
+    strategies.map(strategy => 
+      Promise.race([
+        strategy(),
+        new Promise(resolve => setTimeout(resolve, 500, null))
+      ])
+    )
+  );
+
+  // Process results and count occurrences
+  const priceCounts = {};
+  results.forEach(result => {
+    if (result.status === 'fulfilled' && result.value) {
+      const normalized = normalizePrice(result.value);
+      if (normalized) {
+        // Extract numeric value from the normalized price
+        const numericValue = parseFloat(normalized.replace(/[^\d.]/g, ''));
+        // Only count if the price is <= 90,000
+        if (!isNaN(numericValue) && numericValue <= 90000) {
+          priceCounts[normalized] = (priceCounts[normalized] || 0) + 1;
+        }
+      }
+    }
+  });
+
+  // Return the most common price with at least 2 confirmations
+  const sortedPrices = Object.entries(priceCounts)
+    .sort((a, b) => b[1] - a[1]);
+
+  if (sortedPrices.length > 0 && sortedPrices[0][1] >= 2) {
+    return sortedPrices[0][0];
+  }
+
+  // Fallback to highest confidence if no consensus
+  if (sortedPrices.length > 0) {
+    return sortedPrices[0][0];
+  }
+
+  return 'N/A';
 }
