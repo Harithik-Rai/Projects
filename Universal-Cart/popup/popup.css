@@ -175,4 +175,19 @@ button:hover {
   padding: 12px;
   text-align: center;
   color: #666;
+
+  #add-current-item-btn {
+  width: 100%;
+  padding: 10px;
+  background-color: #0a0;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+#add-current-item-btn:hover {
+  background-color: #080;
+}
 }
