@@ -717,7 +717,6 @@ function isValidImageUrl(url) {
   }
 }
 
-// Update the consensus price function to include new methods
 async function getConsensusPrice() {
   // Check site-specific conditions
   const hostname = window.location.hostname;
@@ -749,18 +748,29 @@ async function getConsensusPrice() {
     )
   );
 
-  // Process results and count occurrences
+  // First, check if ANY price is >= 50,000 → return 'N/A' immediately
+  const hasInvalidPrice = results.some(result => {
+    if (result.status === 'fulfilled' && result.value) {
+      const normalized = normalizePrice(result.value);
+      if (normalized) {
+        const numericValue = parseFloat(normalized.replace(/[^\d.]/g, ''));
+        return !isNaN(numericValue) && numericValue >= 20000;
+      }
+    }
+    return false;
+  });
+
+  if (hasInvalidPrice) {
+    return 'N/A'; // Abort if any price is too high
+  }
+
+  // If no invalid prices, proceed with consensus
   const priceCounts = {};
   results.forEach(result => {
     if (result.status === 'fulfilled' && result.value) {
       const normalized = normalizePrice(result.value);
       if (normalized) {
-        // Extract numeric value from the normalized price
-        const numericValue = parseFloat(normalized.replace(/[^\d.]/g, ''));
-        // Only count if the price is <= 90,000
-        if (!isNaN(numericValue) && numericValue <= 90000) {
-          priceCounts[normalized] = (priceCounts[normalized] || 0) + 1;
-        }
+        priceCounts[normalized] = (priceCounts[normalized] || 0) + 1;
       }
     }
   });
