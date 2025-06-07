@@ -748,23 +748,7 @@ async function getConsensusPrice() {
     )
   );
 
-  // First, check if ANY price is >= 50,000 → return 'N/A' immediately
-  const hasInvalidPrice = results.some(result => {
-    if (result.status === 'fulfilled' && result.value) {
-      const normalized = normalizePrice(result.value);
-      if (normalized) {
-        const numericValue = parseFloat(normalized.replace(/[^\d.]/g, ''));
-        return !isNaN(numericValue) && numericValue >= 20000;
-      }
-    }
-    return false;
-  });
-
-  if (hasInvalidPrice) {
-    return 'N/A'; // Abort if any price is too high
-  }
-
-  // If no invalid prices, proceed with consensus
+  // Process results and count occurrences (no early price filtering)
   const priceCounts = {};
   results.forEach(result => {
     if (result.status === 'fulfilled' && result.value) {
@@ -775,18 +759,28 @@ async function getConsensusPrice() {
     }
   });
 
-  // Return the most common price with at least 2 confirmations
+  // Get the most common price with at least 2 confirmations
   const sortedPrices = Object.entries(priceCounts)
     .sort((a, b) => b[1] - a[1]);
 
+  let finalPrice = 'N/A';
+  
   if (sortedPrices.length > 0 && sortedPrices[0][1] >= 2) {
-    return sortedPrices[0][0];
-  }
-
+    finalPrice = sortedPrices[0][0];
+  } 
   // Fallback to highest confidence if no consensus
-  if (sortedPrices.length > 0) {
-    return sortedPrices[0][0];
+  else if (sortedPrices.length > 0) {
+    finalPrice = sortedPrices[0][0];
   }
 
-  return 'N/A';
+  // Final gatekeeper: Reject if price > 20,000
+  if (finalPrice !== 'N/A') {
+    const numericValue = parseFloat(finalPrice.replace(/[^\d.]/g, ''));
+    if (isNaN(numericValue)) {
+      return 'N/A';
+    }
+    return numericValue <= 20000 ? finalPrice : 'N/A';
+  }
+
+  return finalPrice;
 }
