@@ -729,13 +729,15 @@ async function getConsensusPrice() {
   const isSears = hostname.includes('sears');
   const isholt = hostname.includes('holtrenfrew');
   const isxbox = hostname.includes('xbox');
+  const isnapa = hostname.includes('napacanada');
+
 
   const strategies = [
     ...(isNordstrom ? [] : [getStructuredDataPrice]),
     getPriceFromMetaTags,
     getPriceFromHiddenInputs,
-    ...((isCostco || isSportChek || isApple || isLowes || isEb || isSears || isholt || isxbox) ? [] : [getPriceFromFallbackMethods]),
-    ...((isCostco) ? [] : [getPriceFromTextSearch])
+    ...((isCostco || isSportChek || isApple || isLowes || isEb || isSears || isholt || isxbox || isnapa) ? [] : [getPriceFromFallbackMethods]),
+    ...((isCostco || isnapa) ? [] : [getPriceFromTextSearch])
   ].filter(Boolean);
 
   // Run all strategies in parallel with timeout
