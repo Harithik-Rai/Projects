@@ -469,148 +469,41 @@ async function getPriceFromFallbackMethods() {
 }
 
 async function getProductImage() {
-  // Amazon-specific detection first
-  try {
-    // Amazon's main product image
-    const amazonMainImage = document.querySelector('#main-image-container img, #imgTagWrapperId img, #landingImage');
-    if (amazonMainImage && isValidImageUrl(amazonMainImage.src)) {
-      return makeAbsoluteUrl(amazonMainImage.src);
-    }
-
-    // Amazon's alternative image (often higher quality)
-    const amazonZoomImage = document.querySelector('[data-action="main-image-click"] img');
-    if (amazonZoomImage && isValidImageUrl(amazonZoomImage.src)) {
-      return makeAbsoluteUrl(amazonZoomImage.src);
-    }
-
-    // Amazon's structured data
-    const amazonScript = document.querySelector('script[type="a-state"]');
-    if (amazonScript) {
-      try {
-        const data = JSON.parse(amazonScript.textContent);
-        if (data.imageBlockData && data.imageBlockData.mainImage) {
-          const mainImage = data.imageBlockData.mainImage;
-          if (isValidImageUrl(mainImage)) {
-            return makeAbsoluteUrl(mainImage);
-          }
-        }
-      } catch (e) {
-        console.warn('Amazon JSON parse error:', e);
-      }
-    }
-
-    // Amazon's image in JSON-LD
-    const jsonLdScript = document.querySelector('script[type="application/ld+json"]');
-    if (jsonLdScript) {
-      try {
-        const data = JSON.parse(jsonLdScript.textContent);
-        if (data.image) {
-          if (typeof data.image === 'string' && isValidImageUrl(data.image)) {
-            return makeAbsoluteUrl(data.image);
-          }
-          if (Array.isArray(data.image) && data.image.length > 0 && isValidImageUrl(data.image[0])) {
-            return makeAbsoluteUrl(data.image[0]);
-          }
-        }
-      } catch (e) {
-        console.warn('Amazon JSON-LD parse error:', e);
-      }
-    }
-
-    // Amazon's image in JavaScript data
-    const imageDataScript = document.querySelector('script:contains("ImageBlockATF")');
-    if (imageDataScript) {
-      try {
-        const scriptText = imageDataScript.textContent;
-        const imageUrlMatch = scriptText.match(/"mainUrl":"([^"]+)"/);
-        if (imageUrlMatch && imageUrlMatch[1] && isValidImageUrl(imageUrlMatch[1])) {
-          return makeAbsoluteUrl(imageUrlMatch[1].replace(/\\\//g, '/'));
-        }
-      } catch (e) {
-        console.warn('Amazon script data parse error:', e);
-      }
-    }
-  } catch (e) {
-    console.warn('Amazon-specific image detection failed:', e);
-  }
-
-  // Target-specific detection (unchanged)
-  try {
-    const targetImage = document.querySelector('[data-test="product-image"] img, [data-test="gallery-image"] img');
-    if (targetImage && isValidImageUrl(targetImage.src)) {
-      return makeAbsoluteUrl(targetImage.src);
-    }
-    const targetZoomImage = document.querySelector('[data-test="zoom-img"]');
-    if (targetZoomImage && isValidImageUrl(targetZoomImage.src)) {
-      return makeAbsoluteUrl(targetZoomImage.src);
-    }
-    const targetScript = document.querySelector('script[type="application/ld+json"]');
-    if (targetScript) {
-      try {
-        const data = JSON.parse(targetScript.textContent);
-        if (data.image) {
-          if (typeof data.image === 'string' && isValidImageUrl(data.image)) {
-            return makeAbsoluteUrl(data.image);
-          }
-          if (Array.isArray(data.image) && data.image.length > 0 && isValidImageUrl(data.image[0])) {
-            return makeAbsoluteUrl(data.image[0]);
-          }
-        }
-      } catch (e) {
-        console.warn('Target JSON-LD parse error:', e);
-      }
-    }
-  } catch (e) {
-    console.warn('Target-specific image detection failed:', e);
-  }
-
-  // Original image detection strategies (unchanged)
-  const imageSelectors = [
-    // Structured data sources
-    () => document.querySelector('[itemprop="image"]')?.src,
-    () => document.querySelector('meta[property="og:image"]')?.content,
-    () => document.querySelector('meta[name="twitter:image"]')?.content,
-    () => document.querySelector('link[rel="image_src"]')?.href,
+  // Try multiple strategies with priority
+  const strategies = [
+    // 1. Structured data first (most reliable)
+    getStructuredDataImage,
     
-    // Common gallery and product image selectors
-    () => document.querySelector('.product-image img, .product__image img')?.src,
-    () => document.querySelector('.main-image img, .hero-image img')?.src,
-    () => document.querySelector('.gallery-image img, .thumbnail img')?.src,
-    () => document.querySelector('.swiper-slide img, .carousel-item img')?.src,
+    // 2. Site-specific detection for major retailers
+    getAmazonImage,
+    getTargetImage,
+    getWalmartImage,
+    getBestBuyImage,
+    getEtsyImage,
+    getEbayImage,
     
-    // Data attributes and lazy-loaded images
-    () => document.querySelector('[data-product-image]')?.getAttribute('data-product-image'),
-    () => document.querySelector('[data-src]')?.getAttribute('data-src'),
-    () => document.querySelector('[data-image]')?.getAttribute('data-image'),
-    () => document.querySelector('img[loading="lazy"]')?.src,
+    // 3. Common product image patterns
+    getMetaTagImages,
+    getGalleryImages,
+    getZoomableImages,
+    getLazyLoadedImages,
     
-    // Image in product containers
-    () => {
-      const container = document.querySelector('.product, .product-detail, .pdp-container');
-      return container?.querySelector('img')?.src;
-    },
-    
-    // First large image on page
-    () => {
-      const images = Array.from(document.querySelectorAll('img'));
-      const largeImages = images.filter(img => {
-        const width = parseInt(img.width) || 0;
-        const height = parseInt(img.height) || 0;
-        return width >= 300 && height >= 300;
-      });
-      return largeImages[0]?.src;
-    }
+    // 4. Fallback strategies
+    getLargestVisibleImage,
+    getFirstLargeImageNearTitle,
+    getImageFromProductContainer,
+    getPictureTagImage
   ];
 
-  // Try all selectors in order
-  for (const selector of imageSelectors) {
+  // Try each strategy in order until we find a valid image
+  for (const strategy of strategies) {
     try {
-      const imageUrl = selector();
+      const imageUrl = await strategy();
       if (imageUrl && isValidImageUrl(imageUrl)) {
         return makeAbsoluteUrl(imageUrl);
       }
     } catch (e) {
-      console.warn('Image selector failed:', e);
+      console.warn(`Image strategy ${strategy.name} failed:`, e);
     }
   }
 
@@ -618,27 +511,245 @@ async function getProductImage() {
   return chrome.runtime.getURL('icons/icon128.png');
 }
 
-// Enhanced validation to exclude non-product images
+// ======================
+// STRATEGY IMPLEMENTATIONS
+// ======================
+
+async function getStructuredDataImage() {
+  const scripts = document.querySelectorAll('script[type="application/ld+json"]');
+  for (const script of scripts) {
+    try {
+      const data = Array.isArray(JSON.parse(script.textContent)) 
+        ? JSON.parse(script.textContent) 
+        : [JSON.parse(script.textContent)];
+      
+      for (const item of data) {
+        if (item['@type'] === 'Product' || item['@type'] === 'Offer') {
+          if (item.image) {
+            if (typeof item.image === 'string') return item.image;
+            if (Array.isArray(item.image) && item.image.length > 0) return item.image[0];
+          }
+          if (item.offers?.image) {
+            if (typeof item.offers.image === 'string') return item.offers.image;
+            if (Array.isArray(item.offers.image) && item.offers.image.length > 0) {
+              return item.offers.image[0];
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Structured data parse error:', e);
+    }
+  }
+  return null;
+}
+
+async function getAmazonImage() {
+  if (!window.location.hostname.includes('amazon')) return null;
+  
+  // Main image
+  const mainImage = document.querySelector('#landingImage, #imgBlkFront, #main-image');
+  if (mainImage && isValidImageUrl(mainImage.src)) {
+    return mainImage.src;
+  }
+  
+  // Zoom image (often higher quality)
+  const zoomImage = document.querySelector('[data-action="main-image-click"] img');
+  if (zoomImage && isValidImageUrl(zoomImage.src)) {
+    return zoomImage.src;
+  }
+  
+  // JavaScript data
+  const script = document.querySelector('script:contains("ImageBlockATF")');
+  if (script) {
+    const match = script.textContent.match(/"mainUrl":"([^"]+)"/);
+    if (match && match[1]) {
+      const url = match[1].replace(/\\\//g, '/');
+      if (isValidImageUrl(url)) return url;
+    }
+  }
+  
+  return null;
+}
+
+async function getTargetImage() {
+  if (!window.location.hostname.includes('target')) return null;
+  
+  const image = document.querySelector('[data-test="product-image"] img, [data-test="gallery-image"] img');
+  return image?.src || null;
+}
+
+async function getWalmartImage() {
+  if (!window.location.hostname.includes('walmart')) return null;
+  
+  const image = document.querySelector('.hover-zoom-hero-image, .prod-hero-image img');
+  return image?.src || null;
+}
+
+async function getBestBuyImage() {
+  if (!window.location.hostname.includes('bestbuy')) return null;
+  
+  const image = document.querySelector('.primary-image img, .product-gallery-image');
+  return image?.src || null;
+}
+
+async function getEtsyImage() {
+  if (!window.location.hostname.includes('etsy')) return null;
+  
+  const image = document.querySelector('.image-carousel-container img, .carousel-image');
+  return image?.src || null;
+}
+
+async function getEbayImage() {
+  if (!window.location.hostname.includes('ebay')) return null;
+  
+  const image = document.querySelector('#icImg, #mainImgHldr img');
+  return image?.src || null;
+}
+
+async function getMetaTagImages() {
+  const properties = [
+    'meta[property="og:image:secure_url"]',
+    'meta[property="og:image"]',
+    'meta[name="twitter:image"]',
+    'link[rel="image_src"]'
+  ];
+  
+  for (const selector of properties) {
+    const tag = document.querySelector(selector);
+    if (tag) {
+      const url = tag.content || tag.href;
+      if (isValidImageUrl(url)) return url;
+    }
+  }
+  return null;
+}
+
+async function getGalleryImages() {
+  const galleryImages = document.querySelectorAll('.product-image img, .product__image img, .gallery-image img');
+  for (const img of galleryImages) {
+    if (isValidImageUrl(img.src)) return img.src;
+  }
+  return null;
+}
+
+async function getZoomableImages() {
+  const zoomImages = document.querySelectorAll('[data-zoom-image], .zoomImg');
+  for (const img of zoomImages) {
+    const url = img.getAttribute('data-zoom-image') || img.src;
+    if (isValidImageUrl(url)) return url;
+  }
+  return null;
+}
+
+async function getLazyLoadedImages() {
+  const images = document.querySelectorAll('img, picture source');
+  for (const img of images) {
+    const url = img.getAttribute('data-src') ||
+                img.getAttribute('data-image') ||
+                img.getAttribute('data-srcset')?.split(',')[0]?.split(' ')[0] ||
+                img.getAttribute('srcset')?.split(',')[0]?.split(' ')[0] ||
+                img.src;
+
+    if (isValidImageUrl(url)) return url;
+  }
+  return null;
+}
+
+async function getPictureTagImage() {
+  const pictures = document.querySelectorAll('picture');
+  for (const picture of pictures) {
+    const sources = picture.querySelectorAll('source');
+    for (const source of sources) {
+      const srcset = source.getAttribute('srcset');
+      if (srcset) {
+        const url = srcset.split(',')[0]?.split(' ')[0];
+        if (isValidImageUrl(url)) return url;
+      }
+    }
+    const img = picture.querySelector('img');
+    if (img && isValidImageUrl(img.src)) return img.src;
+  }
+  return null;
+}
+
+async function getLargestVisibleImage() {
+  const images = Array.from(document.querySelectorAll('img')).map(img => {
+    const rect = img.getBoundingClientRect();
+    return {
+      src: img.src,
+      width: rect.width,
+      height: rect.height,
+      area: rect.width * rect.height
+    };
+  }).filter(img => img.area > 5000).sort((a, b) => b.area - a.area);
+
+  for (const img of images) {
+    if (isValidImageUrl(img.src)) return img.src;
+  }
+  return null;
+}
+
+async function getFirstLargeImageNearTitle() {
+  const title = document.querySelector('h1, [itemprop="name"], .product-title');
+  if (!title) return null;
+  
+  // Check siblings
+  let sibling = title.nextElementSibling;
+  for (let i = 0; i < 5 && sibling; i++) {
+    const img = sibling.querySelector('img');
+    if (img && isValidImageUrl(img.src)) return img.src;
+    sibling = sibling.nextElementSibling;
+  }
+  
+  // Check parent container
+  const container = title.closest('.product, .product-detail, .pdp-container');
+  if (container) {
+    const img = container.querySelector('img');
+    if (img && isValidImageUrl(img.src)) return img.src;
+  }
+  
+  return null;
+}
+
+async function getImageFromProductContainer() {
+  const containers = document.querySelectorAll('.product, .product-detail, .pdp-container, .item');
+  for (const container of containers) {
+    const img = container.querySelector('img');
+    if (img && isValidImageUrl(img.src)) return img.src;
+  }
+  return null;
+}
+
+// ======================
+// HELPER FUNCTIONS
+// ======================
+
 function isValidImageUrl(url) {
   if (!url) return false;
   
-  // Skip non-product images (like profile pictures, ads, etc.)
-  const excludePatterns = [
-    'avatar', 'profile', 'user', 'ad', 'sponsor', 
-    'banner', 'promo', 'marketing', 'selfie', 'person'
+  // Skip placeholder images
+  const placeholderPatterns = [
+    'placeholder', 'blank', 'missing', 'noimage', 'none',
+    'spacer', 'pixel', 'transparent', 'empty', 'default'
   ];
   
   const lowerUrl = url.toLowerCase();
-  if (excludePatterns.some(pattern => lowerUrl.includes(pattern))) {
+  if (placeholderPatterns.some(pattern => lowerUrl.includes(pattern))) {
     return false;
   }
   
-  // Skip placeholder images
-  const placeholderKeywords = ['placeholder', 'blank', 'missing', 'noimage', 'none'];
-  if (placeholderKeywords.some(kw => lowerUrl.includes(kw))) {
+  // Skip non-product images
+  const nonProductPatterns = [
+    'logo', 'icon', 'avatar', 'profile', 'user', 'ad', 
+    'banner', 'promo', 'marketing', 'sponsor', 'social'
+  ];
+  
+  if (nonProductPatterns.some(pattern => lowerUrl.includes(pattern))) {
     return false;
   }
   
+  // Validate URL format
   try {
     const parsed = new URL(url, window.location.href);
     
@@ -646,6 +757,7 @@ function isValidImageUrl(url) {
       return false;
     }
     
+    // Check file extension
     const path = parsed.pathname.toLowerCase();
     const validExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
     if (!validExtensions.some(ext => path.endsWith(ext))) {
@@ -663,8 +775,9 @@ function isValidImageUrl(url) {
   }
 }
 
-// Helper function remains unchanged
 function makeAbsoluteUrl(url) {
+  if (!url) return url;
+  
   try {
     if (url.startsWith('//')) {
       return window.location.protocol + url;
