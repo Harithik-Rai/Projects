@@ -1,31 +1,81 @@
-// Connection manager (unchanged)
+// Connection manager
 let isAlive = true;
 const connectionInterval = setInterval(verifyConnection, 30000);
 
+// List of banned domains (non-shopping sites)
+const BANNED_DOMAINS = [
+  'youtube.com',
+  'twitter.com',
+  'instagram.com',
+  'linkedin.com',
+  'reddit.com',
+  'tiktok.com',
+  'pinterest.com',
+  'twitch.tv',
+  'discord.com',
+  'netflix.com',
+  'imdb.com',
+  'wikipedia.org',
+  'news.',
+  'blog.',
+  'mail.',
+  'google.com/maps',
+  'messenger.com',
+  'whatsapp.com',
+  'telegram.org'
+];
+
+function isBannedSite() {
+  const currentUrl = window.location.href.toLowerCase();
+  return BANNED_DOMAINS.some(domain => currentUrl.includes(domain));
+}
+
+function disconnect() {
+  isAlive = false;
+  clearInterval(connectionInterval);
+  console.log('Disconnected from banned site');
+}
+
 function verifyConnection() {
+  // First check if we are on a banned site
+  if (isBannedSite()) {
+    disconnect();
+    return;
+  }
+
+  // Then verify the normal connection
   chrome.runtime.sendMessage({type: "ping"}, (response) => {
     if (chrome.runtime.lastError || !response) {
-      isAlive = false;
-      clearInterval(connectionInterval);
+      disconnect();
     }
   });
 }
 
-// Initialize connection (unchanged)
-chrome.runtime.sendMessage({type: "contentScriptReady"}, (response) => {
-  if (chrome.runtime.lastError) {
-    console.log("Initial connection failed, will retry...");
-    setTimeout(() => chrome.runtime.sendMessage({type: "contentScriptReady"}), 1000);
-  }
-});
+// Check immediately on script load
+if (isBannedSite()) {
+  disconnect();
+} else {
+  // Initialize connection only if not on a banned site
+  chrome.runtime.sendMessage({type: "contentScriptReady"}, (response) => {
+    if (chrome.runtime.lastError) {
+      console.log("Initial connection failed, will retry...");
+      setTimeout(() => chrome.runtime.sendMessage({type: "contentScriptReady"}), 1000);
+    }
+  });
+}
 
-// Cleanup on tab close (unchanged)
+// Cleanup on tab close
 window.addEventListener('unload', () => {
   clearInterval(connectionInterval);
 });
 
-// Message handler (unchanged)
+// Message handler, reject if on banned site
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (isBannedSite()) {
+    sendResponse({success: false, error: "Banned site - functionality disabled"});
+    return;
+  }
+
   if (!isAlive) {
     sendResponse({success: false, error: "Content script disconnected"});
     return;
@@ -58,7 +108,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
-// Enhanced scraping function with multiple validation
 async function scrapeItemInfo(url) {
   try {
     const title = await getProductTitle();
@@ -77,7 +126,6 @@ async function scrapeItemInfo(url) {
   }
 }
 
-// Enhanced title extraction with Amazon-specific detection
 async function getProductTitle() {
   // Amazon-specific title detection first
   try {
@@ -125,7 +173,7 @@ async function getProductTitle() {
     console.warn('Amazon-specific title detection failed:', e);
   }
 
-  // Original title detection strategies (unchanged)
+  // Rest of the title detection strategies
   const titleSources = [
     () => document.querySelector('h1')?.textContent?.trim(),
     () => document.querySelector('[itemprop="name"]')?.textContent?.trim(),
@@ -153,7 +201,7 @@ async function getProductTitle() {
 function cleanTitle(title) {
   if (!title) return title;
   
-  // Amazon-specific cleaning
+  // Amazon-specific cleaning (needed to fix Amazon specific issue)
   let cleaned = title
     .replace(/\s+/g, ' ') // Collapse multiple spaces
     .replace(/^Amazon\.ca:/, '') // Remove Amazon prefix
@@ -553,7 +601,7 @@ async function getAmazonImage() {
     return mainImage.src;
   }
   
-  // Zoom image (often higher quality)
+  // Zoom image (usually higher quality)
   const zoomImage = document.querySelector('[data-action="main-image-click"] img');
   if (zoomImage && isValidImageUrl(zoomImage.src)) {
     return zoomImage.src;
@@ -863,7 +911,7 @@ async function getConsensusPrice() {
     )
   );
 
-  // Process results and count occurrences (no early price filtering)
+  // Process results and count occurrences
   const priceCounts = {};
   results.forEach(result => {
     if (result.status === 'fulfilled' && result.value) {
