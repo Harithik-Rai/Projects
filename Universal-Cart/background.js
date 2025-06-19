@@ -33,7 +33,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (!activeConnections.has(sender.tab.id)) {
       sendResponse({
         success: false, 
-        error: "Disconnected, please use a supported site.", // Custom error
+        error: "Disconnected, please use a supported site.",
         suggestion: "Try refreshing the page"
       });
       return;
