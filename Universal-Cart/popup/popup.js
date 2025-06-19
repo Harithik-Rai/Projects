@@ -43,7 +43,6 @@ document.addEventListener('DOMContentLoaded', function() {
     subtotalElement.textContent = '$' + calculateSubtotal(items);
   }
 
-  // Enhanced connection checking
 async function checkConnection() {
   try {
     const now = Date.now();
@@ -63,7 +62,7 @@ async function checkConnection() {
         { type: "ping" },
         (response) => {
           if (chrome.runtime.lastError) {
-            // Replace Chrome's error with a custom message
+            // Replace Chrome's error with a custom message for better explanation
             connectionState.lastError = "Disconnected, please use a site that we can connect with.";
             resolve(false);
           } else {
@@ -99,7 +98,6 @@ function updateConnectionStatus() {
   }
 }
 
-  // Robust connection refresh
   async function refreshConnection() {
     refreshBtn.disabled = true;
     statusText.textContent = 'Connecting...';
