@@ -1,5 +1,22 @@
-HOW TO USE AS GOOGLE EXTENSION:
+# Universal Cart (Chrome Extension)
 
+## Overview
+Universal Cart is a Chrome extension that lets users add products from multiple e-commerce sites into a single shopping cart. 
+It streamlines the online shopping experience by eliminating the need to manage multiple carts across different platforms.
+
+## Features
+- Add products from any supported site directly to a universal cart.  
+- Automatically extracts product details (title, price, image) using DOM parsing and regex.  
+- Aggregates items into a clean, easy-to-manage interface.  
+- Works across top e-commerce sites.  
+
+## Tech Stack
+- JavaScript  
+- HTML/CSS  
+- Chrome APIs  
+- VSCode 
+
+## How to Use:
 1) Inside the folder you should have these files with the code I provided:
 manifest.json
 popup/ (folder)
