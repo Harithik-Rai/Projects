@@ -20,6 +20,7 @@ By running the algorithms and analyzing their runtimes, the project highlights h
 - Clear comparison of efficiency between O(n²) and O(n log n) sorting approaches.  
 
 ## Tech Stack
-- **Java** (core implementation)  
-- **JVM timing functions** for runtime measurement  
+- **Java** (core implementation)
+- **Java I/O** for reading array inputs  
+- **Vector & arrays** for flexible data handling 
 - **PNG visualization** of runtimes  
