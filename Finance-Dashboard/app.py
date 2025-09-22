@@ -1,5 +1,3 @@
-# HOW TO RUN IN TERMINAL: python -m streamlit run app.py
-
 import io
 import textwrap
 from datetime import date
