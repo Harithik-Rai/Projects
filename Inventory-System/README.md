@@ -6,15 +6,18 @@ A modular, drag-and-drop inventory management system for Unity, designed to be e
 
 - **Drag-and-Drop Inventory UI**  
   Smooth mouse-based item movement with automatic slot detection and visual feedback.
+  ![Drag and Drop Demo](docs/drag-drop.gif)
 
 - **Intelligent Item Stacking**  
   Automatic stacking and merging of identical items with configurable per-item stack limits.
+  ![Item Stacking Demo](docs/stacking.gif)
 
 - **ScriptableObject-Based Items**  
   Create and manage items directly in the Unity Inspector — no code required for basic items.
 
 - **Item Usage System**  
   Left-click to use consumables with built-in support for stat modification (e.g. health).
+  ![Item Usage Demo](docs/use-item.gif)
 
 - **World Item Interaction**  
   Support for automatic pickup on collision or manual pickup via key press, plus item dropping.
