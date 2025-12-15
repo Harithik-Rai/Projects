@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 597584bd07de0224cbef3e91a8f67e5c, type: 3}
+  m_Name: HeartData
+  m_EditorClassIdentifier: 
+  itemName: Heart
+  itemSprite: {fileID: -1920308780, guid: ff319591edb588843b85edb3a2747069, type: 3}
+  itemDescription: A very kind heart which heals you 1+ HP!
+  maxStackSize: 3
+  itemType: 0
+  isUsable: 1
+  isDroppable: 1
+  statToChange: 1
+  amountToChangeStat: 1
+  attributeToChange: 0
+  amountToChangeAttribute: 0
