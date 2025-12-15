@@ -31,7 +31,7 @@ A modular, drag-and-drop inventory management system for Unity, designed to be e
 ## Demos
 
 ### Drag & Drop Inventory
-![Drag and Drop Demo](docs/drag-drop.gif)
+![Drag and Drop Demo](Docs/DragDrop.gif)
 
 ### Item Stacking
 ![Item Stacking Demo](docs/Stacking.gif)
