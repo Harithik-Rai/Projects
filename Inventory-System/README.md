@@ -37,6 +37,12 @@ A modular, drag-and-drop inventory management system for Unity, designed to be e
 
 ## Installation
 
+### Option 1: Unity Package (Recommended)
+1. Download the latest `.unitypackage` from the **Releases** page
+2. Import it into your Unity project
+3. Verify the `InventorySystem` folder appears under `Assets/`
+
+### Option 2: GitHub
 1. Clone or download this repository
 2. Copy `Assets/InventorySystem` into your project’s `Assets/` folder
 
