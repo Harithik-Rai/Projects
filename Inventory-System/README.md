@@ -28,16 +28,16 @@ A modular, drag-and-drop inventory management system for Unity, designed to be e
 - **Zero External Dependencies**  
   Requires only Unity and TextMeshPro.
 
-## Demo
+## Demos
 
 ### Drag & Drop Inventory
-![Drag and Drop Demo](docs/drag-drop.gif)
+![Drag and Drop Demo](docs/DragDrop.gif)
 
 ### Item Stacking
-![Item Stacking Demo](docs/stacking.gif)
+![Item Stacking Demo](docs/Stacking.gif)
 
 ### Item Usage
-![Item Usage Demo](docs/use-item.gif)
+![Item Usage Demo](docs/Using.gif)
 
 ## Requirements
 
