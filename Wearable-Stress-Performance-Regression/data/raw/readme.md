@@ -9,5 +9,3 @@
 - Sampling frequency of the arrays are given with the structs
 - The dataset contains two female and eight male participants, however the gender is not mentioned for the purpose of deidentification
 
-IMPORTANT: The Data.zip file is setup using Git LFS
-  
