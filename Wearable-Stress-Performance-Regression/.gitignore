@@ -1,0 +1,13 @@
+# Virtual environments
+venv/
+.env/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Data (raw data should not be committed)
+data/raw/
+
+# OS files
+.DS_Store
+Thumbs.db
