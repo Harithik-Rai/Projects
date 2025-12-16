@@ -8,4 +8,6 @@
 - All exam starts at 9:00 AM (CT or CDT depending on the date corresponding to the unix time stamp). Mid terms are 1.5 hr long and final is 3 hr long.
 - Sampling frequency of the arrays are given with the structs
 - The dataset contains two female and eight male participants, however the gender is not mentioned for the purpose of deidentification
+
+IMPORTANT: The Data.zip file is setup using Git LFS
   
