@@ -1,14 +1,15 @@
 # Wearable Stress and Academic Performance Analysis
 
 ## Overview
-This project explores the relationship between physiological stress signals collected from wearable devices and academic performance during university exams. Using real-world biometric data, the goal is to understand whether patterns of stress—particularly short-term responses—are associated with exam outcomes.
+This project explores the relationship between physiological stress signals collected from wearable devices and academic performance during university exams. Using real-world biometric data, the goal is to understand whether patterns of stress (particularly short-term responses) are associated with exam outcomes.
 
 The project emphasizes interpretability, real data handling, and responsible modeling rather than overfitting or unrealistic performance claims.
 
 
 ## Dataset
-The analysis uses the **Wearable Exam Stress Dataset**, which contains physiological data collected from wearable sensors worn by students during exams. The dataset includes:
+The analysis uses the **Wearable Exam Stress Dataset**, which contains physiological data collected from wearable sensors worn by students during exams here: https://physionet.org/content/wearable-exam-stress/1.0.0/
 
+The dataset includes:
 - Electrodermal Activity (EDA)
 - Heart Rate (HR)
 - Skin Temperature
@@ -27,7 +28,7 @@ To make the physiological data interpretable and suitable for modeling, the raw 
 - **EDA Peak Count**: Frequency of acute stress responses
 - **EDA Trend**: Overall increase or decrease in stress over time
 
-These features were aggregated per student per exam and merged with corresponding grades.
+These features were aggregated per student per exam and merged with the corresponding grades.
 
 
 ## Modeling Approach
@@ -43,9 +44,9 @@ The model achieved a **mean LOOCV RMSE of approximately 21 points**, reflecting 
 
 
 ## Visualization & Key Insight
-A scatter plot of **EDA peak count vs exam grade** reveals a non-random relationship between acute stress responses and performance.
+A scatter plot of **EDA peak count vs exam grade** shows a non-random relationship between acute stress responses and performance.
 
-The visualization suggests that the number of short-term electrodermal activity (EDA) peaks—indicative of moments of physiological stress—is related to exam performance in a complex way. Although the data is noisy and does not imply causation, students with more frequent stress responses show a wide range of outcomes, motivating further modeling to better understand how stress dynamics relate to academic results.
+The visualization suggests that the number of short-term electrodermal activity (EDA) peaks (moments of physiological stress) is related to exam performance in a complex way. Although the data is noisy and does not imply causation, students with more frequent stress responses show a wide range of outcomes, motivating further modeling to better understand how stress dynamics relate to academic results.
 
 
 ## Limitations & Future Work
