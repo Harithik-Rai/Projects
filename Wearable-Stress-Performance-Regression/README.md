@@ -1,32 +1,37 @@
-# Predicting Exam Performance from Wearable Stress Signals
-Dataset from: https://physionet.org/content/wearable-exam-stress/1.0.0/
+# Wearable Stress and Academic Performance Prediction
 
 ## Overview
-This project investigates whether physiological stress signals captured by wearable devices
-can predict cognitive performance during real-world exam settings.
-
-Using heart rate, electrodermal activity, skin temperature, and motion data collected across
-multiple exam sessions, I model exam scores as a continuous outcome and analyze which stress
-patterns are most predictive of performance.
+Can physiological stress signals collected from wearable devices predict academic performance during exams?  
+This project analyzes electrodermal activity (EDA) data collected during midterms and finals and evaluates whether stress patterns are associated with exam outcomes.
 
 ## Dataset
-Wearable Exam Stress Dataset (PhysioNet):
-- Multimodal wearable sensor data
-- Three exam sessions per participant
-- Ground-truth exam grades
+The analysis uses a publicly available wearable exam stress dataset containing:
+- Continuous physiological signals (EDA) recorded during exams
+- Academic performance data for multiple students across exams
 
-## Objectives
-- Extract interpretable temporal features from physiological signals
-- Build regression models to predict exam performance
-- Identify physiological patterns associated with high and low performance
+## Feature Engineering
+Raw EDA signals were transformed into interpretable summary features, including:
+- Baseline stress level (mean EDA)
+- Stress variability (standard deviation)
+- High-stress responses (95th percentile, peak count)
+- Stress trend over time
 
-## Methods
-- Feature engineering on time-series signals
-- Regularized linear regression and tree-based models
-- Cross-validation and error analysis
+## Modeling Approach
+A linear regression model with standardized features was trained to predict exam grades.
+Model performance was evaluated using leave-one-out cross-validation (LOOCV) with RMSE to ensure robust estimates on a small dataset.
 
 ## Results
-(Added after modeling)
+The model achieved an average RMSE of approximately 21 points.
+Coefficient analysis revealed that:
+- Higher baseline stress was associated with lower grades
+- Frequent acute stress responses (EDA peaks) were associated with higher performance
 
-## Key Insights
-(Added after analysis)
+## Interpretation
+The results suggest that not all stress is detrimental—moderate, engagement-related stress may be beneficial, while sustained baseline stress may hinder performance.
+
+## Limitations & Future Work
+- Small sample size
+- Use of EDA only (no heart rate or respiration)
+- No alignment with exam phases or question difficulty
+
+Future work could incorporate additional physiological modalities and larger datasets.
