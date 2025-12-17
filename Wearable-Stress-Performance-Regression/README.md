@@ -1,37 +1,34 @@
-# Wearable Stress and Academic Performance Prediction
+📊 Stress and Academic Performance Analysis
+Dataset
 
-## Overview
-Can physiological stress signals collected from wearable devices predict academic performance during exams?  
-This project analyzes electrodermal activity (EDA) data collected during midterms and finals and evaluates whether stress patterns are associated with exam outcomes.
+This project uses the Wearable Exam Stress Dataset, which contains physiological signals collected from wearable devices during university exams. Signals include electrodermal activity (EDA), heart rate, temperature, and motion data, paired with exam performance outcomes.
 
-## Dataset
-The analysis uses a publicly available wearable exam stress dataset containing:
-- Continuous physiological signals (EDA) recorded during exams
-- Academic performance data for multiple students across exams
+Approach
 
-## Feature Engineering
-Raw EDA signals were transformed into interpretable summary features, including:
-- Baseline stress level (mean EDA)
-- Stress variability (standard deviation)
-- High-stress responses (95th percentile, peak count)
-- Stress trend over time
+Extracted interpretable stress features from EDA signals, including:
 
-## Modeling Approach
-A linear regression model with standardized features was trained to predict exam grades.
-Model performance was evaluated using leave-one-out cross-validation (LOOCV) with RMSE to ensure robust estimates on a small dataset.
+Mean activation
 
-## Results
-The model achieved an average RMSE of approximately 21 points.
-Coefficient analysis revealed that:
-- Higher baseline stress was associated with lower grades
-- Frequent acute stress responses (EDA peaks) were associated with higher performance
+Variability
 
-## Interpretation
-The results suggest that not all stress is detrimental—moderate, engagement-related stress may be beneficial, while sustained baseline stress may hinder performance.
+High-percentile responses
 
-## Limitations & Future Work
-- Small sample size
-- Use of EDA only (no heart rate or respiration)
-- No alignment with exam phases or question difficulty
+Acute stress peak frequency
 
-Future work could incorporate additional physiological modalities and larger datasets.
+Temporal stress trends
+
+Aggregated physiological features per student and exam
+
+Modeled exam performance using linear regression with leave-one-out cross-validation
+
+Evaluated performance using RMSE to ensure interpretability in grade units
+
+Key Insight
+
+Exploratory analysis revealed that acute stress responses (EDA peaks) exhibit a meaningful association with exam performance. Rather than being purely detrimental, short-term physiological stress may reflect engagement or cognitive activation during high-stakes evaluations.
+
+Visualization
+
+The plot below illustrates the relationship between EDA peak frequency and exam grade, highlighting the complexity and nonlinearity of stress–performance dynamics.
+
+<img width="636" height="470" alt="image" src="https://github.com/user-attachments/assets/722914f2-2286-4d5b-8536-20eac3f1b20d" />
