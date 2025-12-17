@@ -71,4 +71,5 @@ This project demonstrates the ability to:
 - Communicate results responsibly and clearly
 
 The plot below illustrates the relationship between EDA peak frequency and exam grade, highlighting the complexity and nonlinearity of stress–performance dynamics.
+
 <img width="636" height="470" alt="image" src="https://github.com/user-attachments/assets/722914f2-2286-4d5b-8536-20eac3f1b20d" />
