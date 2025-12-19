@@ -149,8 +149,8 @@ jupyter notebook notebooks/stress_performance_analysis.ipynb
 
 This project demonstrates the ability to:
 
-✅ **Data Engineering**: Handle messy, real-world biomedical time-series data  
-✅ **Feature Engineering**: Transform raw signals into interpretable domain-specific features  
-✅ **Statistical Rigor**: Apply appropriate validation techniques (LOOCV)   
-✅ **Critical Thinking**: Acknowledge limitations and avoid over-interpretation  
-✅ **Professional Communication**: Present results clearly with proper scientific context  
+**Data Engineering**: Handle messy, real-world biomedical time-series data  
+**Feature Engineering**: Transform raw signals into interpretable domain-specific features  
+**Statistical Rigor**: Apply appropriate validation techniques (LOOCV)   
+**Critical Thinking**: Acknowledge limitations and avoid over-interpretation  
+**Professional Communication**: Present results clearly with proper scientific context  
