@@ -112,15 +112,17 @@ The scatter plot below shows a **non-random relationship** between acute stress 
 
 ## Project Structure
 ```
-wearable-stress-analysis/
+Wearable-Stress-Performance-Regression/
 ├── notebook/
-│   └── stress_performance_analysis.ipynb  # Main analysis notebook
+│   └── stress_performance_analysis.ipynb   # Analysis notebook
 ├── data/
 │   └── raw/                                # Original dataset
 │       ├── Data/                           # Participant wearable data
-│       └── StudentGrades.txt               # Exam scores
-├── README.md
-└── LICENSE
+│       ├── StudentGrades.txt               # Exam scores
+│       ├── readme.md                       # Information on the dataset
+│       └── LICENSE
+├── figures/                                # Stores images (PNG) of the 3 figures created
+└── README.md
 ```
 
 
