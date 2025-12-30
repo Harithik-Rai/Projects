@@ -18,6 +18,7 @@ It streamlines the online shopping experience by eliminating the need to manage 
 
 ## How to Use:
 1) Inside the folder you should have these files with the code I provided:
+
 Universal-Cart/
 ├── icons/
 │   ├── README
