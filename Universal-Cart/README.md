@@ -17,23 +17,7 @@ It streamlines the online shopping experience by eliminating the need to manage 
 - VSCode 
 
 ## How to Use:
-1) Inside the folder you should have these files with the code I provided:
-
-Universal-Cart/
-├── icons/
-│   ├── README
-│   ├── icon16.png
-│   ├── icon32.png
-│   ├── icon48.png
-│   └── icon128.png
-├── popup/
-│   ├── popup.html
-│   ├── popup.css
-│   └── popup.js
-├── background.js
-├── content.js
-├── manifest.json
-└── README.md
+1) Inside the folder you should have the same struture of files that are in this GitHub repo.
 
 2) Load the Extension in Chrome
 Open Chrome and go to:
