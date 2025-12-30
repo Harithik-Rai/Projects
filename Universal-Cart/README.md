@@ -1,37 +1,60 @@
 # Universal Cart (Chrome Extension)
 
 ## Overview
-Universal Cart is a Chrome extension that lets users add products from multiple e-commerce sites into a single shopping cart. 
-It streamlines the online shopping experience by eliminating the need to manage multiple carts across different platforms.
+Universal Cart is a Chrome extension that allows users to add products from multiple e-commerce websites into a single, unified shopping cart.
+
+It streamlines the online shopping experience by eliminating the need to manage multiple carts across different platforms, making it easier to compare and track items in one place.
+
 
 ## Features
-- Add products from any supported site directly to a universal cart.  
-- Automatically extracts product details (title, price, image) using DOM parsing and regex.  
-- Aggregates items into a clean, easy-to-manage interface.  
-- Works across top e-commerce sites.  
+- Add products from supported e-commerce sites into a universal cart  
+- Automatically extracts product details (title, price, image, URL) using DOM parsing and regex  
+- Aggregates items into a clean, easy-to-manage popup interface  
+- Clickable product links to quickly return to the original product page  
+
 
 ## Tech Stack
 - JavaScript  
-- HTML/CSS  
-- Chrome APIs  
-- VSCode 
+- HTML / CSS  
+- Chrome Extension APIs  
+- VS Code  
 
-## How to Use:
-1) Inside the folder you should have the same struture of files that are in this GitHub repo.
 
-2) Load the Extension in Chrome
-Open Chrome and go to:
-chrome://extensions
+## How to Use
 
-Enable Developer Mode (toggle in top-right corner)
+### 1. Project Setup
+Ensure your local folder matches the file structure shown above.
 
-Click "Load unpacked" button
+### 2. Load the Extension in Chrome
+1. Open Chrome and navigate to:  
+   `chrome://extensions`
+2. Enable **Developer Mode** (top-right toggle)
+3. Click **"Load unpacked"**
+4. Select the `Universal-Cart` folder
 
-Select your universal-cart folder
+The extension will now appear in your extensions list.
 
-The extension will now appear in your extensions list and is now usable!
 
-3) To use it you simply go to a product on an online website and click the "Add to cart" button at the top of the extension,
-it will then appear in the cart showing the image, price, title, and cilckable URL to get back to the product site.
+### 3. Using the Extension
+1. Navigate to a product page on an e-commerce website  
+2. Click the **"Add to Cart"** button in the extension popup  
+3. The product will appear in the universal cart with:
+   - Image
+   - Title
+   - Price
+   - Clickable URL to the original product page
 
-*This is still a work in progress and rarely some sites may not work due to having strict privacy settings.
+
+## Technical Highlights
+- **JavaScript**: Implemented core extension logic, including DOM parsing for product data extraction, event handling for user interactions, and Chrome API messaging between content scripts, the popup, and the background service worker.
+- **HTML**: Structured the extension popup layout to clearly display product information such as images, titles, prices, and links.
+- **CSS**: Styled the popup interface to be clean, readable, and responsive within Chrome extension size constraints.
+- **Chrome Extension APIs**: Used `content scripts` to extract product data from web pages, `background scripts` to manage shared state, and `manifest.json` to configure permissions and extension behavior.
+
+
+## Notes & Limitations
+- Product extraction relies on page structure and may vary between sites  
+- Designed as a proof-of-concept focusing on extensibility and core functionality  
+
+
+
