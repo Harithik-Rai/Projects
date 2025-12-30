@@ -18,14 +18,21 @@ It streamlines the online shopping experience by eliminating the need to manage 
 
 ## How to Use:
 1) Inside the folder you should have these files with the code I provided:
-manifest.json
-popup/ (folder)
-   popup.html
-   popup.css
-   popup.js
-content.js
-background.js
-icons/ (folder with sample icon files)
+Universal-Cart/
+├── icons/
+│   ├── README
+│   ├── icon16.png
+│   ├── icon32.png
+│   ├── icon48.png
+│   └── icon128.png
+├── popup/
+│   ├── popup.html
+│   ├── popup.css
+│   └── popup.js
+├── background.js
+├── content.js
+├── manifest.json
+└── README.md
 
 2) Load the Extension in Chrome
 Open Chrome and go to:
