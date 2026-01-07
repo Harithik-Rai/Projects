@@ -21,10 +21,11 @@ The **Personal Finance Dashboard** is an interactive web application that helps 
 - **Matplotlib** – data visualization  
 
 ## Setup & Usage
-1. Download the "app.py" file and open in a terminal
-2. Ensure you have the correct dependencies installed and install if missing
-3. Type "python -m streamlit run app.py" into the terminal to open the program
+1. Download the "app.py" file and open in VSCode (or your own IDE/code editor)
+2. Ensure you have the correct dependencies installed and install if any is missing
+3. Run the program and then type "python -m streamlit run app.py" to open the program!
 
 
 Example image of program:
-<img width="1919" height="984" alt="image" src="https://github.com/user-attachments/assets/5da98834-e198-42e3-b9e4-6a48230e01d9" />
+<img width="1918" height="944" alt="dashboard_example" src="https://github.com/user-attachments/assets/d58626e8-8034-4426-9fa6-6c17ff581153" />
+
