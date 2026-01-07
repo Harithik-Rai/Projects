@@ -1,9 +1,9 @@
 # Personal Finance Dashboard  
 
-## 📌 Overview  
+## Overview  
 The **Personal Finance Dashboard** is an interactive web application that helps track and analyze personal spending habits. Built with Python and Streamlit, it enables users to upload transaction data, filter by categories and date ranges, and visualize spending patterns through charts and summaries.  
 
-## 🚀 Features  
+## Features  
 - Upload your own **CSV file** or use sample transaction data  
 - Flexible **column mapping** to adapt to different CSV formats  
 - **Filters**: date range, categories, and granularity (daily/monthly)  
@@ -14,7 +14,7 @@ The **Personal Finance Dashboard** is an interactive web application that helps 
 - **Top categories table** with formatted totals  
 - **Download option** for filtered datasets  
 
-## 🛠️ Tech Stack  
+## Tech Stack  
 - **Python**  
 - **Streamlit** – web app framework  
 - **Pandas, NumPy** – data manipulation  
