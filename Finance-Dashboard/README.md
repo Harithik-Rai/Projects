@@ -26,6 +26,7 @@ The **Personal Finance Dashboard** is an interactive web application that helps 
 3. Run the program and then type "python -m streamlit run app.py" to open the program!
 
 
+
 Example image of the dashboard with sample data:
 <img width="1918" height="944" alt="dashboard_example" src="https://github.com/user-attachments/assets/d58626e8-8034-4426-9fa6-6c17ff581153" />
 
