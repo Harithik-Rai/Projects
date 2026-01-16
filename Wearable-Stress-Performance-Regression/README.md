@@ -134,7 +134,7 @@ Wearable-Stress-Performance-Regression/
 ### Installation
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/wearable-stress-analysis.git
+git clone https://github.com/Harithik-Rai/wearable-stress-analysis.git
 cd wearable-stress-analysis
 ```
 
@@ -146,7 +146,7 @@ cd wearable-stress-analysis
 
 4. Run the analysis:
 ```bash
-jupyter notebook notebooks/stress_performance_analysis.ipynb
+jupyter notebook notebooks/Projects/stress_performance_analysis.ipynb
 ```
 
 
