@@ -125,6 +125,7 @@ cd wearable-stress-analysis
 ```
 
 2. Install dependencies:
+   
    pip install -r requirements.txt
 
 3. Download the dataset:
@@ -141,7 +142,12 @@ jupyter notebook notebooks/02_modeling_xgboost.ipynb
 This project demonstrates the ability to:
 
 **Time-Series Analysis**: Work with multivariate degradation data
+
 **Feature Engineering**: Extract meaningful temporal patterns from raw sensor signals
+
 **Model Evaluation**: Apply leakage-safe validation strategies
+
 **Applied Machine Learning**: Build models aligned with real-world constraints
+
 **Professional Communication**: Clearly document assumptions, results, and limitations
+
