@@ -9,7 +9,7 @@ The analysis emphasizes **realistic data handling**, **careful feature engineeri
 ## Dataset
 The project uses the **NASA CMAPSS Turbofan Engine Degradation Simulation Dataset**, a widely used benchmark for predictive maintenance research.
 
-**Source**: [Turbofan Engine Degradation Simulation Dataset]([https://www.nasa.gov/intelligent-systems-division/discovery-and-systems-health/pcoe/pcoe-data-set-repository/))
+**Source**: [Turbofan Engine Degradation Simulation Dataset](https://www.nasa.gov/intelligent-systems-division/discovery-and-systems-health/pcoe/pcoe-data-set-repository/)
 
 **Dataset Characteristics:**
 - **Engines**: 100 simulated turbofan engines (FD001 subset)
@@ -129,7 +129,7 @@ cd wearable-stress-analysis
    pip install -r requirements.txt
 
 3. Download the dataset:
-   - Visit [Turbofan Engine Degradation Simulation Dataset]([https://www.nasa.gov/intelligent-systems-division/discovery-and-systems-health/pcoe/pcoe-data-set-repository/))
+   - Visit [Turbofan Engine Degradation Simulation Dataset](https://www.nasa.gov/intelligent-systems-division/discovery-and-systems-health/pcoe/pcoe-data-set-repository/)
    - Extract to `data/raw/` directory
 
 4. Run the analysis:
