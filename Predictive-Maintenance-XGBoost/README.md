@@ -137,17 +137,15 @@ cd wearable-stress-analysis
 jupyter notebook notebooks/01_eda_clean.ipynb
 jupyter notebook notebooks/02_modeling_xgboost.ipynb
 ```
+
+
 ## Project Goals & Skills Demonstrated
 
 This project demonstrates the ability to:
 
-**Time-Series Analysis**: Work with multivariate degradation data
-
-**Feature Engineering**: Extract meaningful temporal patterns from raw sensor signals
-
-**Model Evaluation**: Apply leakage-safe validation strategies
-
+**Time-Series Analysis**: Work with multivariate degradation data 
+**Feature Engineering**: Extract meaningful temporal patterns from raw sensor signals  
+**Model Evaluation**: Apply leakage-safe validation strategies 
 **Applied Machine Learning**: Build models aligned with real-world constraints
-
 **Professional Communication**: Clearly document assumptions, results, and limitations
 
